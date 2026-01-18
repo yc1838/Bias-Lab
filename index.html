@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bias Lab</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Global Aesthetic Styles -->
+    <style>
+        :root {
+            --paper: #e8e8e8;
+            --lead-light: #4a4a4a;
+            --lead-heavy: #1a1a1a;
+            --ink: #050505;
+            --smudge: rgba(0, 0, 0, 0.08);
+            --grit: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        * {
+            box-sizing: border-box;
+            cursor: crosshair !important; 
+        }
+
+        body {
+            background-color: var(--paper);
+            color: var(--ink);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Graphite Texture Overlay */
+        body::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: var(--grit);
+            opacity: 0.15;
+            pointer-events: none;
+            z-index: 9999;
+            mix-blend-mode: multiply;
+        }
+
+        #root {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Typography Utilities */
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .font-display { font-family: 'Inter', sans-serif; }
+
+        /* Custom Components from Design */
+        .ink-container {
+            width: 90%;
+            max-width: 1200px;
+            display: grid;
+            gap: 4rem;
+            z-index: 20;
+            padding: 2rem;
+            /* subtle rotation for the whole container */
+            transform: rotate(-0.5deg); 
+        }
+        
+        @media (min-width: 1024px) {
+            .ink-container.split {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .title-display {
+            font-size: clamp(4rem, 8vw, 8rem);
+            line-height: 0.85;
+            letter-spacing: -0.05em;
+            text-transform: uppercase;
+            font-weight: 900;
+            filter: url(#distort);
+            position: relative;
+            color: var(--ink);
+        }
+
+        .btn-brutalist {
+            width: 100%;
+            padding: 1.5rem;
+            background: var(--ink);
+            color: var(--paper);
+            border: none;
+            font-family: 'Inter', sans-serif;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: 1.2rem;
+            letter-spacing: 0.1em;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-brutalist:hover:not(:disabled) {
+            background: transparent;
+            color: var(--ink);
+            outline: 2px solid var(--ink);
+            transform: translate(-4px, -4px);
+            box-shadow: 8px 8px 0px var(--ink);
+        }
+
+        .btn-brutalist:disabled {
+            opacity: 0.5;
+            cursor: not-allowed !important;
+        }
+
+        .panel-paper {
+            background: rgba(255,255,255,0.4);
+            border: 1px solid rgba(0,0,0,0.1);
+            box-shadow: 20px 20px 60px rgba(0,0,0,0.05);
+            backdrop-filter: blur(5px);
+            position: relative;
+        }
+
+        .panel-paper::after {
+            content: "";
+            position: absolute;
+            top: -10px; right: -10px;
+            width: 100%; height: 100%;
+            border: 1px solid var(--lead-heavy);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Graphite Smudges Animation */
+        .smudge-overlay {
+            position: fixed;
+            inset: 0;
+            background: 
+                radial-gradient(circle at 10% 20%, var(--smudge) 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, var(--smudge) 0%, transparent 30%),
+                radial-gradient(circle at 50% 50%, rgba(0,0,0,0.03) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 5;
+        }
+    </style>
+    <script type="importmap">
+    {
+      "imports": {
+        "recharts": "https://esm.sh/recharts@^3.6.0",
+        "@google/genai": "https://esm.sh/@google/genai@^1.37.0",
+        "react/": "https://esm.sh/react@^19.2.3/",
+        "react": "https://esm.sh/react@^19.2.3",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+      }
+    }
+    </script>
+</head>
+  <body>
+    <!-- SVG Filters (Hidden) -->
+    <svg style="display: none;">
+        <filter id="distort">
+            <feTurbulence type="fractalNoise" baseFrequency="0.01 0.1" numOctaves="5" result="noise" seed="2"/>
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+    </svg>
+    
+    <div class="smudge-overlay"></div>
+    <div id="root"></div>
+
+    <script>
+        // Subtle mouse tracking for "Graphite Sheen" effect
+        document.addEventListener('mousemove', (e) => {
+            const x = e.clientX / window.innerWidth;
+            const y = e.clientY / window.innerHeight;
+            const overlay = document.querySelector('.smudge-overlay');
+            if(overlay) {
+                overlay.style.background = `
+                    radial-gradient(circle at ${x * 100}% ${y * 100}%, rgba(0,0,0,0.12) 0%, transparent 25%),
+                    radial-gradient(circle at 10% 20%, var(--smudge) 0%, transparent 40%),
+                    radial-gradient(circle at 80% 80%, var(--smudge) 0%, transparent 30%)
+                `;
+            }
+        });
+    </script>
+  </body>
+</html>

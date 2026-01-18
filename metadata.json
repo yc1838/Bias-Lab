@@ -1,0 +1,5 @@
+{
+  "name": "Implicit Bias Reaction Test",
+  "description": "A gamified cognitive psychology experiment testing subconscious shooter bias using reaction time and error rates across different demographics.",
+  "requestFramePermissions": []
+}
